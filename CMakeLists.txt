@@ -1,4 +1,4 @@
-# Cmake setup
+# Cmake setup check for O2, or O3 
 cmake_minimum_required (VERSION 3.19)
 project (saras)
 

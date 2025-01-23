@@ -1,13 +1,11 @@
 import h5py
 from adios2 import Stream
-import adios2
 import numpy as np
 import argparse
+
 FLOAT_THRESHOLD = 1e-7
 DOUBLE_THRESHOLD = 1e-15
 
-
-# error 10e-7 float and error 10e-15 double
 def read_hdf5_timestep(file_path, variable):
     """Read data from HDF5 file."""
     with h5py.File(file_path, 'r') as f:
@@ -15,19 +13,12 @@ def read_hdf5_timestep(file_path, variable):
             return f[variable][...]
         raise ValueError(f"Variable '{variable}' not found in HDF5 file: {file_path}")
 
-# def read_adios_bp(file_path, variable):
-#     """Read data from ADIOS BP file."""
-#     fr = adios2.FileReader(file_path)
-#     data = fr.read(variable)
-#     return data
-
 def read_adios_bp(file_path, variable, time_step):
-    with Stream("output.bp", "r") as s:
+    """Read data from ADIOS BP file."""
+    with Stream(file_path, "r") as s:
         for _ in s.steps():
-            print(f"Current step is {s.current_step()}")
             if s.current_step() == int(time_step): 
-                data = s.read(variable)
-                return data 
+                return s.read(variable)
     raise ValueError(f"Time step {time_step} not found in ADIOS file: {file_path}")
 
 def compare_and_subtract(hdf5_data, adios_data):
@@ -37,16 +28,28 @@ def compare_and_subtract(hdf5_data, adios_data):
         print(f"HDF5 shape: {hdf5_data.shape}")
         print(f"ADIOS BP shape: {adios_data.shape}")
         return None
-    
-    # Perform subtraction
-    difference = hdf5_data - adios_data
-    
-    # Calculate statistics
-    max_diff = np.max(np.abs(difference))
-    mean_diff = np.mean(difference)
-    std_diff = np.std(difference)
 
-      # Evaluate precision
+    # # Check for NaN consistency
+    # hdf5_nan_mask = np.isnan(hdf5_data)
+    # adios_nan_mask = np.isnan(adios_data)
+
+    # if not np.array_equal(hdf5_nan_mask, adios_nan_mask):
+    #     print("ERROR: Inconsistent NaN values between HDF5 and ADIOS data.")
+    #     print(f"HDF5 NaN mask:\n{hdf5_nan_mask}")
+    #     print(f"ADIOS NaN mask:\n{adios_nan_mask}")
+    #     return None
+    # else:
+    #     print("NaN values are consistent between HDF5 and ADIOS data.")
+
+    # Calculate differences
+    difference = hdf5_data - adios_data
+
+    # Calculate statistics
+    max_diff = np.nanmax(np.abs(difference))
+    mean_diff = np.nanmean(difference)
+    std_diff = np.nanstd(difference)
+
+    # Evaluate precision
     if max_diff < FLOAT_THRESHOLD:
         print("The data match within float precision (threshold: 1e-7).")
         if max_diff < DOUBLE_THRESHOLD:
@@ -54,7 +57,6 @@ def compare_and_subtract(hdf5_data, adios_data):
     else:
         print("The data do not meet the float or double precision thresholds.")
 
-    
     return {
         'difference': difference,
         'max_difference': max_diff,
@@ -68,7 +70,7 @@ def main():
     parser.add_argument("--adios", required=True, help="Path to the ADIOS BP file.")
     parser.add_argument("--hdf5-var", default="IntArray", help="Variable name in HDF5 file (default: IntArray)")
     parser.add_argument("--adios-var", default="data", help="Variable name in ADIOS file (default: data)")
-    parser.add_argument("--time-step", default="0", help="time step in ADIOS file (default: is 0)")
+    parser.add_argument("--time-step", default="0", help="Time step in ADIOS file (default: 0)")
     parser.add_argument("--output", help="Output file to save difference (optional)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose output")
 

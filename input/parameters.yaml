@@ -31,9 +31,9 @@
     "RBC Type": 1
 
     # Non-dimensional parameters
-    "Reynolds Number": 1000
+    "Reynolds Number": 100
     "Rossby Number": 12
-    "Rayleigh Number": 10000
+    "Rayleigh Number": 1000
     "Prandtl Number": 0.71
     "Taylor Number": 0.0
 
@@ -80,15 +80,15 @@
     # 2D simulations can be run by setting Y Index to 0
     # Grid sizes: 2 3 5 9 17 33 65 129 257 513 1025 2049 4097 8193 16385]
     # Size index: 0 1 2 3  4  5  6  7   8   9   10   11   12   13    14
-    "X Index": 6
+    "X Index": 7
     "Y Index": 0
-    "Z Index": 6
+    "Z Index": 7
 
 
 # Parellelization parameters
 "Parallel":
     "Number of OMP threads": 1
-    "X Number of Procs": 4
+    "X Number of Procs": 6
     "Y Number of Procs": 1
 
 
@@ -105,7 +105,7 @@
     "Integration Scheme": 1
 
     # Tolerance used in iterative method (if Implicit Crank-Nicholson scheme is chosen above)
-    "Solve Tolerance": 1.0e-5
+    "Solve Tolerance": 1.0e-1
 
     # Set below flag to true if restarting from a solution file
     # If flag is true, solver will read the last written solution file in output directory for restart
@@ -149,12 +149,12 @@
 # Poisson solver parameters
 "Multigrid":
     # Number of restriction/prolongation steps in each V-Cycle
-    "V-Cycle Depth": 3
+    "V-Cycle Depth": 1
     # Number of V-Cycles to be performed
-    "V-Cycle Count": 5
+    "V-Cycle Count": 1
 
     # Tolerance used in iterative method when solving at coarsest level
-    "Solve Tolerance": 1.0e-5
+    "Solve Tolerance": 1.0e-1
 
     # Iterative method to be used for smoothing
     # 0 = Jacobi iteration
@@ -162,9 +162,9 @@
     "Smoothing Method": 1
 
     # Number of smoothing iterations to be performed after restriction operations
-    "Pre-Smoothing Count": 4
+    "Pre-Smoothing Count": 1
     # Number of smoothing iterations to be performed after prolongation operations
-    "Post-Smoothing Count": 4
+    "Post-Smoothing Count": 1
 
     # Type of residual to be computed at end of each V-Cycle of the multigrid method
     # This value can be set as below:

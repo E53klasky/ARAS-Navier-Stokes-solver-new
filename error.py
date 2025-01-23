@@ -2,6 +2,10 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import sys
+from matplotlib.colors import Normalize
+from matplotlib.colors import LogNorm
+
+
 
 def hdf5_reader(filepath, dataset):
     """Read a dataset from an HDF5 file."""
@@ -25,8 +29,13 @@ def calculate_difference(high_res_data, low_res_data, skip_factor):
 def plot_difference(diff, output_path):
     """Plot the 2D difference array and save it as an image."""
     plt.figure(figsize=(8, 6))
-    plt.imshow(diff, cmap='gnuplot2', origin='lower')
-    plt.colorbar(label='Difference')
+    min_val = np.min(diff)
+    max_val = np.max(diff)
+    norm = Normalize(vmin=min_val, vmax=max_val)
+    #norm=LogNorm(vmin=min_val, vmax=max_val)
+    plt.contour(diff, levels=50, colors='black', linewidths=0.5)
+    plt.imshow(diff, cmap='cividis', norm=norm)
+    plt.colorbar(ticks=np.linspace(min_val, max_val, num=10), label="Difference")
     plt.title("Difference Between Resolutions")
     plt.xlabel("X-axis")
     plt.ylabel("Y-axis")
@@ -54,11 +63,19 @@ def calculate_and_plot_difference(filepath1, filepath2, dataset, output_path):
         
 
         skip_factor = skip_factor_x
-
         diff = calculate_difference(high_res_data, low_res_data, skip_factor)
 
- 
+        # 256, 128, 64
         plot_difference(diff, output_path)
+        saved_diff = diff[:, 64]  # Extract the 256th column (all rows) 256,12
+        output_diff_file = "129_Error.txt"  # File to save the extracted data
+        try:
+            with open(output_diff_file, "w") as f:
+                np.savetxt(f, saved_diff, fmt="%.6f")
+            print(f"Saved difference at y=64 to: {output_diff_file}")
+        except Exception as e:
+            print(f"Error while saving data to {output_diff_file}: {e}")
+            sys.exit(1)
     except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(1)

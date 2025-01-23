@@ -62,7 +62,6 @@ writer::writer(const grid& mesh , std::vector<field>& wFields , std::string outD
     adios = new adios2::ADIOS(MPI_COMM_WORLD);
     bpIO = adios->DeclareIO("WriteBP");
 
-    // Define variables with proper offsets based on staggering
     for (unsigned int i = 0; i < wFields.size(); i++) {
         // Use cell-centered dimensions for all variables since we interpolate before writing
         std::vector<std::size_t> shape = {
@@ -111,7 +110,7 @@ writer::writer(const grid& mesh , std::vector<field>& wFields , std::string outD
         }
     }
 }
-// Add new method for writing BP files
+
 void writer::writeBP(real time) {
     if (!isADIOSInitialized) {
         std::string filename = this->outputDir + "/output.bp";
@@ -131,16 +130,6 @@ void writer::writeBP(real time) {
 #endif
         // Interpolate data to cell centers
         interpolateData(wFields[i]);
-
-        // // Debug print
-        // if (mesh.rankData.rank == 0) {
-        //     double* data = fieldData.dataFirst();
-        //     std::cout << "Field " << wFields[i].fieldName << " last 5 values: ";
-        //     for (int j = 0; j < 5; j++) {
-        //         std::cout << data[fieldData.size() - j - 1] << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
 
         if (wFields[i].fieldName == "Vx") {
             bpWriter.Put(bpVx , fieldData.dataFirst());
@@ -445,7 +434,6 @@ void writer::writeTarang(real time) {
         // The destination is the targetDSpace. Though the targetDSpace is smaller than the sourceDSpace,
         // only the appropriate hyperslab within the sourceDSpace is transferred to the destination.
 
-        // -----------------------------HERE----------------11111111111111111111---------------------------
         status = H5Dwrite(dataSet , H5T_NATIVE_REAL , sourceDSpace[pIndex] , targetDSpace[pIndex] , plist_id , fieldData.dataFirst());
         if (status) {
             if (mesh.rankData.rank == 0) {
@@ -520,7 +508,7 @@ void writer::writeSolution(real time) {
         fieldData.resize(localSize[pIndex]);
 #endif
 
-        std::cout << "FieldData size: " << fieldData.size() << std::endl;
+        // std::cout << "FieldData size: " << fieldData.size() << std::endl;
 
         //Write data after first interpolating them to cell centers
         interpolateData(wFields[i]);
@@ -533,7 +521,6 @@ void writer::writeSolution(real time) {
         // The source here is the sourceDSpace pointing to the memory buffer. Note that its view has been adjusted using hyperslab.
         // The destination is the targetDSpace. Though the targetDSpace is smaller than the sourceDSpace,
         // only the appropriate hyperslab within the sourceDSpace is transferred to the destination.
-  // -----------------------------HERE----------------11111111111111111111---------------------------
         status = H5Dwrite(dataSet , H5T_NATIVE_REAL , sourceDSpace[pIndex] , targetDSpace[pIndex] , plist_id , fieldData.dataFirst());
         if (status) {
             if (mesh.rankData.rank == 0) {
@@ -553,16 +540,7 @@ void writer::writeSolution(real time) {
 
     delete fileName;
 
-    if (mesh.rankData.rank == 0)
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!THE TIME STEP IS: " << timestepCounter << std::endl;
-
-
-  //  if (timestepCounter == 1)
     writeBP(time);
-    timestepCounter++;
-    if (mesh.rankData.rank == 0)
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!THE NEXT TIME STEP IS: " << timestepCounter << std::endl;
-
 }
 
 /**
@@ -597,7 +575,6 @@ void writer::writeRestart(real time) {
     // Add the scalar value of time to the restart file
     hid_t timeDSpace = H5Screate(H5S_SCALAR);
     dataSet = H5Dcreate2(fileHandle , "Time" , H5T_NATIVE_REAL , timeDSpace , H5P_DEFAULT , H5P_DEFAULT , H5P_DEFAULT);
-      // -----------------------------HERE----------------11111111111111111111---------------------------
     status = H5Dwrite(dataSet , H5T_NATIVE_REAL , timeDSpace , timeDSpace , H5P_DEFAULT , &time);
 
     // Close dataset for future use and dataspace for clearing resources
@@ -627,7 +604,7 @@ void writer::writeRestart(real time) {
         // The destination is the targetDSpace. Though the targetDSpace is smaller than the sourceDSpace,
         // only the appropriate hyperslab within the sourceDSpace is transferred to the destination.
 
-          // -----------------------------HERE----------------11111111111111111111---------------------------
+
         status = H5Dwrite(dataSet , H5T_NATIVE_REAL , sourceDSpace[i] , targetDSpace[i] , plist_id , fieldData.dataFirst());
         if (status) {
             if (mesh.rankData.rank == 0) {
@@ -687,12 +664,6 @@ void writer::interpolateData(field& outField) {
     // Use with care for exotic arrays
 
 #ifdef PLANAR
-    if (mesh.rankData.rank == 0) {
-        std::cout << "Interpolating " << outField.fieldName
-            << " xStag=" << outField.xStag
-            << " zStag=" << outField.zStag << std::endl;
-    }
-
     if (not outField.xStag) {
         for (int i = 0; i < fieldData.shape()[0]; i++) {
             for (int k = 0; k < fieldData.shape()[2]; k++) {
