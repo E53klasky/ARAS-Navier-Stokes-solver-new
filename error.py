@@ -31,11 +31,10 @@ def plot_difference(diff, output_path):
     plt.figure(figsize=(8, 6))
     min_val = np.min(diff)
     max_val = np.max(diff)
-    norm = Normalize(vmin=min_val, vmax=max_val)
-    #norm=LogNorm(vmin=min_val, vmax=max_val)
+    norm = Normalize(vmin=0, vmax=0.2)
     plt.contour(diff, levels=50, colors='black', linewidths=0.5)
     plt.imshow(diff, cmap='cividis', norm=norm)
-    plt.colorbar(ticks=np.linspace(min_val, max_val, num=10), label="Difference")
+    plt.colorbar(ticks=np.linspace(0, 0.2, num=10), label="Difference")
     plt.title("Difference Between Resolutions")
     plt.xlabel("X-axis")
     plt.ylabel("Y-axis")
@@ -65,10 +64,10 @@ def calculate_and_plot_difference(filepath1, filepath2, dataset, output_path):
         skip_factor = skip_factor_x
         diff = calculate_difference(high_res_data, low_res_data, skip_factor)
 
-        # 256, 128, 64
+        # 256->4, 128->2, 64->0 
         plot_difference(diff, output_path)
         saved_diff = diff[:, 64]  # Extract the 256th column (all rows) 256,12
-        output_diff_file = "129_Error.txt"  # File to save the extracted data
+        output_diff_file = "129_Error.txt"  # File to save the extracted data 513, 257,129 Error.txt
         try:
             with open(output_diff_file, "w") as f:
                 np.savetxt(f, saved_diff, fmt="%.6f")

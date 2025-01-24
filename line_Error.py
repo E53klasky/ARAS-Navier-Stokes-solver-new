@@ -18,7 +18,7 @@ def main():
 
     # File paths
     file_paths = [low_res_path, mid_res_path, high_res_path]
-    labels = ["Low Resolution (64)", "Mid Resolution (128)", "High Resolution (256)"]
+    labels = ["Low Resolution (129) from point (64)", "Mid Resolution (256) from point (128)", "High Resolution (512) from point (256)"]
 
     # Read data from each file
     data = []
@@ -37,11 +37,12 @@ def main():
     for i, (values, label) in enumerate(zip(data, labels)):
         plt.plot(values, label=label)
 
-    # Add labels, title, and legend
+    # Add labels, title, legend, and grid
     plt.xlabel("Pixel Index")
     plt.ylabel("Error Value")
     plt.title("Error Data Across Different Resolutions")
     plt.legend()
+    plt.grid(True)
 
     # Save the plot
     plt.savefig(output_path)
@@ -49,3 +50,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

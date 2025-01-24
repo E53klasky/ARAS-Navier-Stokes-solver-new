@@ -10,6 +10,85 @@ from matplotlib import gridspec
 from scipy.interpolate import RegularGridInterpolator
 #from scipy.integrate import simps, trapz
 
+def plotVectorFields(fName, input_dir):
+    # Read velocity data
+    with h5py.File(fName, "r") as f:
+        Vx = f["Vx"][:]
+        Vz = f["Vz"][:]
+
+    # Get the shape of the data
+    Nx, Nz = Vx.shape
+
+    # Generate grid coordinates
+    x = np.linspace(0, 1, Nx)
+    z = np.linspace(0, 1, Nz)
+    X, Z = np.meshgrid(x, z)
+
+    # Normalize the velocity components
+    max_Vx = np.max(np.abs(Vx))
+    max_Vz = np.max(np.abs(Vz))
+    max_velocity = np.max(np.sqrt(Vx**2 + Vz**2))
+
+    normalized_Vx = Vx / max_velocity if max_velocity != 0 else Vx
+    normalized_Vz = Vz / max_velocity if max_velocity != 0 else Vz
+
+    # Remove vectors with near-zero velocity (set them to NaN)
+    velocity_magnitude = np.sqrt(Vx**2 + Vz**2)
+    normalized_Vx[velocity_magnitude < 1e-5] = np.nan
+    normalized_Vz[velocity_magnitude < 1e-5] = np.nan
+
+    # Subsample to reduce the number of vectors displayed
+    step = 10  # Adjust this value to control the density of the vectors
+
+    # Plot vector field for Vx and Vz combined
+    plt.figure(figsize=(10, 8))
+    plt.quiver(X[::step, ::step], Z[::step, ::step],
+               normalized_Vx[::step, ::step], normalized_Vz[::step, ::step],
+               scale=20, scale_units='xy', angles='xy', color='blue', headlength=4)
+    plt.title(f"Vector Field from {os.path.basename(fName)}")
+    plt.xlabel("X")
+    plt.ylabel("Z")
+    plt.grid(True)
+
+    # Save the plot for the combined vector field
+    output_file_vector_field = os.path.join(input_dir, os.path.basename(fName).replace('.h5', '_VectorField.png'))
+    plt.savefig(output_file_vector_field, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Saved combined vector field plot to {output_file_vector_field}.")
+
+    # Optionally, save separate plots for Vx and Vz (if needed)
+    # Plot vector field for Vx
+    plt.figure(figsize=(10, 8))
+    plt.quiver(X[::step, ::step], Z[::step, ::step],
+               normalized_Vx[::step, ::step], np.zeros_like(normalized_Vx)[::step, ::step],
+               scale=20, scale_units='xy', angles='xy', color='blue', headlength=4)
+    output_file_Vx = os.path.join(input_dir, os.path.basename(fName).replace('.h5', '_Vx.png'))
+    plt.title(f"Vector Vx Field from {os.path.basename(fName)}")
+    plt.xlabel("X")
+    plt.ylabel("Z")
+    plt.grid(True)
+
+
+    plt.close()
+    print(f"Saved Vx vector field plot to {output_file_Vx}.")
+
+    # Plot vector field for Vz
+    plt.figure(figsize=(10, 8))
+    plt.quiver(X[::step, ::step], Z[::step, ::step],
+               np.zeros_like(normalized_Vz)[::step, ::step], normalized_Vz[::step, ::step],
+               scale=20, scale_units='xy', angles='xy', color='green', headlength=4)
+    output_file_Vz = os.path.join(input_dir, os.path.basename(fName).replace('.h5', '_Vz.png'))
+    plt.title(f"Vector Vz Field from {os.path.basename(fName)}")
+    plt.xlabel("X")
+    plt.ylabel("Z")
+
+
+    plt.savefig(output_file_Vz, dpi=300, bbox_inches='tight')
+  
+    plt.close()
+    print(f"Saved Vz vector field plot to {output_file_Vz}.")
+
+
 def plotStreamline(fName, input_dir , base_name="streamline"):
     """
     Plots streamlines from an HDF5 file and saves them with unique names.
@@ -34,6 +113,7 @@ def plotStreamline(fName, input_dir , base_name="streamline"):
     X, Z = np.meshgrid(x, z)
 
     # Create plot
+    
     plt.figure()
     stream_obj = plt.streamplot(X, Z, U, W, density=1)
 
@@ -135,6 +215,7 @@ def main(input_dir):
                 plt.close()
                 print(f"Saved image to {output_file_velocity}.")
 
+                plotVectorFields(h5_file, input_dir)
  
 
         except Exception as e:
